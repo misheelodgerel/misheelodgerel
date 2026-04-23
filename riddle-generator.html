@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ocean Riddle Generator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Lato:wght@300;400;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #03112a 0%, #0a2a4a 50%, #0d3b6e 100%);
+      font-family: 'Lato', sans-serif;
+      color: #e8f4f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .bubbles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
+    .bubble {
+      position: absolute;
+      bottom: -80px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(144,224,239,0.25), rgba(72,202,228,0.05));
+      border: 1px solid rgba(144,224,239,0.2);
+      animation: floatUp linear infinite;
+    }
+    .bubble:nth-child(1)  { width: 20px; height: 20px; left: 10%; animation-duration: 9s;  animation-delay: 0s; }
+    .bubble:nth-child(2)  { width: 35px; height: 35px; left: 25%; animation-duration: 13s; animation-delay: 2s; }
+    .bubble:nth-child(3)  { width: 14px; height: 14px; left: 40%; animation-duration: 8s;  animation-delay: 4s; }
+    .bubble:nth-child(4)  { width: 28px; height: 28px; left: 60%; animation-duration: 11s; animation-delay: 1s; }
+    .bubble:nth-child(5)  { width: 18px; height: 18px; left: 75%; animation-duration: 10s; animation-delay: 3s; }
+    .bubble:nth-child(6)  { width: 40px; height: 40px; left: 88%; animation-duration: 14s; animation-delay: 5s; }
+    .bubble:nth-child(7)  { width: 12px; height: 12px; left: 50%; animation-duration: 7s;  animation-delay: 6s; }
+
+    @keyframes floatUp {
+      0%   { transform: translateY(0) scale(1); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.6; }
+      100% { transform: translateY(-110vh) scale(1.1); opacity: 0; }
+    }
+
+    .nav-back {
+      position: fixed;
+      top: 20px; left: 24px;
+      z-index: 100;
+      color: #90e0ef;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.75;
+      transition: opacity 0.2s;
+    }
+    .nav-back:hover { opacity: 1; }
+
+    .card {
+      position: relative;
+      z-index: 10;
+      background: rgba(10, 42, 74, 0.7);
+      border: 1px solid rgba(144, 224, 239, 0.2);
+      border-radius: 24px;
+      padding: 48px 40px;
+      max-width: 620px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(12px);
+    }
+
+    .ocean-icon {
+      font-size: 56px;
+      display: block;
+      margin-bottom: 16px;
+      animation: sway 4s ease-in-out infinite;
+    }
+    @keyframes sway {
+      0%, 100% { transform: rotate(-5deg); }
+      50%       { transform: rotate(5deg); }
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #90e0ef, #48cae4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+
+    .tagline {
+      font-size: 14px;
+      color: rgba(232,244,248,0.5);
+      letter-spacing: 0.06em;
+      font-weight: 300;
+      margin-bottom: 28px;
+    }
+
+    /* Scoreboard */
+    .scoreboard {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .score-pill {
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+    .score-pill.correct { background: rgba(6,214,160,0.15); border: 1px solid rgba(6,214,160,0.4); color: #06d6a0; }
+    .score-pill.wrong   { background: rgba(239,35,60,0.15);  border: 1px solid rgba(239,35,60,0.4);  color: #ef233c; }
+    .score-pill.total   { background: rgba(144,224,239,0.1); border: 1px solid rgba(144,224,239,0.3); color: #90e0ef; }
+
+    /* Categories */
+    .categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+    .cat-btn {
+      padding: 8px 18px;
+      border-radius: 50px;
+      border: 1px solid rgba(144,224,239,0.3);
+      background: transparent;
+      color: #90e0ef;
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cat-btn:hover, .cat-btn.active { background: rgba(72,202,228,0.2); border-color: #48cae4; color: #caf0f8; }
+
+    /* Generate button */
+    .gen-btn {
+      display: inline-block;
+      padding: 15px 44px;
+      background: linear-gradient(135deg, #0077b6, #48cae4);
+      color: #03112a;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Lato', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 24px rgba(72,202,228,0.25);
+      margin-bottom: 32px;
+    }
+    .gen-btn:hover  { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(72,202,228,0.4); }
+    .gen-btn:active { transform: scale(0.97); }
+
+    /* Riddle box */
+    .riddle-box {
+      background: rgba(3, 17, 42, 0.6);
+      border: 1px solid rgba(144,224,239,0.15);
+      border-radius: 16px;
+      padding: 28px 24px;
+      margin-bottom: 24px;
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .riddle-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-style: italic;
+      color: #caf0f8;
+      line-height: 1.7;
+    }
+    .placeholder-text { font-size: 14px; color: rgba(232,244,248,0.3); font-weight: 300; }
+
+    /* Answer input */
+    .answer-input-section { display: none; margin-bottom: 20px; }
+    .answer-input-section label {
+      display: block;
+      font-size: 12px;
+      color: rgba(232,244,248,0.5);
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .input-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .answer-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 12px 18px;
+      border-radius: 50px;
+      border: 1px solid rgba(144,224,239,0.3);
+      background: rgba(3,17,42,0.6);
+      color: #e8f4f8;
+      font-family: 'Lato', sans-serif;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .answer-input:focus { border-color: #48cae4; }
+    .answer-input::placeholder { color: rgba(232,244,248,0.25); }
+    .submit-btn {
+      padding: 12px 24px;
+      border-radius: 50px;
+      border: none;
+      background: linear-gradient(135deg, #0077b6, #48cae4);
+      color: #03112a;
+      font-family: 'Lato', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s;
+      white-space: nowrap;
+    }
+    .submit-btn:hover  { transform: translateY(-2px); }
+    .submit-btn:active { transform: scale(0.97); }
+
+    /* Feedback */
+    .feedback { display: none; border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; font-weight: 700; font-size: 15px; }
+    .feedback.correct-fb { background: rgba(6,214,160,0.12);  border: 1px solid rgba(6,214,160,0.35); color: #06d6a0; }
+    .feedback.wrong-fb   { background: rgba(239,35,60,0.12);  border: 1px solid rgba(239,35,60,0.35);  color: #ef233c; }
+
+    /* Reveal */
+    .reveal-btn {
+      padding: 10px 30px;
+      border-radius: 50px;
+      border: 1px solid rgba(144,224,239,0.3);
+      background: transparent;
+      color: #90e0ef;
+      font-family: 'Lato', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: none;
+      margin-bottom: 14px;
+    }
+    .reveal-btn:hover { background: rgba(72,202,228,0.15); border-color: #48cae4; }
+
+    .answer-box { background: rgba(6,214,160,0.1); border: 1px solid rgba(6,214,160,0.3); border-radius: 12px; padding: 16px 20px; display: none; margin-bottom: 8px; }
+    .answer-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(6,214,160,0.7); font-weight: 700; margin-bottom: 4px; }
+    .answer-text { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: #06d6a0; font-weight: 700; }
+
+    /* Reset */
+    .reset-btn {
+      margin-top: 20px;
+      padding: 8px 20px;
+      border-radius: 50px;
+      border: 1px solid rgba(239,35,60,0.3);
+      background: transparent;
+      color: rgba(239,35,60,0.7);
+      font-family: 'Lato', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .reset-btn:hover { background: rgba(239,35,60,0.1); border-color: #ef233c; color: #ef233c; }
+
+    @keyframes slideIn {
+      0%   { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in { animation: slideIn 0.4s ease forwards; }
+  </style>
+</head>
+<body>
+
+  <div class="bubbles">
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+  </div>
+
+  <a class="nav-back" href="fromscratch.html">&#8592; Back to Jellyfish Page</a>
+
+  <div class="card">
+    <span class="ocean-icon">🌊</span>
+    <h1>Ocean Riddle Generator</h1>
+    <p class="tagline">How well do you know the deep blue sea?</p>
+
+    <div class="scoreboard">
+      <div class="score-pill correct">&#10004; Correct: <span id="scoreCorrect">0</span></div>
+      <div class="score-pill wrong">&#10008; Wrong: <span id="scoreWrong">0</span></div>
+      <div class="score-pill total">Riddles: <span id="scoreTotal">0</span></div>
+    </div>
+
+    <div class="categories">
+      <button class="cat-btn active" onclick="setCategory('all', this)">All Ocean</button>
+      <button class="cat-btn" onclick="setCategory('jellyfish', this)">Jellyfish</button>
+      <button class="cat-btn" onclick="setCategory('fish', this)">Fish &amp; Sharks</button>
+      <button class="cat-btn" onclick="setCategory('deep', this)">Deep Sea</button>
+      <button class="cat-btn" onclick="setCategory('general', this)">Ocean Facts</button>
+    </div>
+
+    <button class="gen-btn" onclick="generateRiddle()">&#10022; Generate Riddle</button>
+
+    <div class="riddle-box" id="riddleBox">
+      <p class="placeholder-text">Press the button to get your first riddle!</p>
+    </div>
+
+    <div class="answer-input-section" id="answerInputSection">
+      <label>Type your answer below</label>
+      <div class="input-row">
+        <input class="answer-input" type="text" id="answerInput" placeholder="What is your answer?" onkeydown="if(event.key==='Enter') checkAnswer()">
+        <button class="submit-btn" onclick="checkAnswer()">Submit &#10148;</button>
+      </div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <button class="reveal-btn" id="revealBtn" onclick="revealAnswer()">Reveal Answer</button>
+
+    <div class="answer-box" id="answerBox">
+      <p class="answer-label">Answer</p>
+      <p class="answer-text" id="answerText"></p>
+    </div>
+
+    <button class="reset-btn" onclick="resetScore()">Reset Score</button>
+  </div>
+
+  <script>
+    const riddles = {
+      jellyfish: [
+        { q: "I have no brain, no heart, no bones — yet I have drifted through Earth's oceans for over 500 million years. What am I?", a: "jellyfish" },
+        { q: "I am 95% water, I glow in the dark, and my sting can stop a human heart. I travel in groups called blooms. What am I?", a: "jellyfish" },
+        { q: "I have tentacles but no hands, I float but cannot swim against a current, and I eat through the same opening I use to release waste. What am I?", a: "jellyfish" },
+        { q: "Some call me immortal — when I grow old I can return to my youngest form and start life all over again. What am I?", a: "immortal jellyfish" },
+        { q: "I light up the deep ocean without electricity, I have no eyes yet I sense light, and I am mostly made of water. What am I?", a: "jellyfish" },
+        { q: "A group of us is called a bloom, a swarm, or a smack. We have roamed the seas longer than the dinosaurs. What are we?", a: "jellyfish" },
+      ],
+      fish: [
+        { q: "I am the ocean's most feared predator, I must keep moving to breathe, and I have rows of teeth that regrow throughout my life. What am I?", a: "shark" },
+        { q: "I can change my color and texture in an instant, I have three hearts and blue blood, and I am one of the ocean's smartest creatures. What am I?", a: "octopus" },
+        { q: "Despite my name I am not a horse — I am a tiny fish that swims upright, mates for life, and holds onto sea grass with my tail. What am I?", a: "seahorse" },
+        { q: "I can leap out of the water, I travel thousands of miles to return to the river where I was born, and bears wait at waterfalls to catch me. What am I?", a: "salmon" },
+        { q: "I am the largest fish in the ocean, I eat only tiny plankton, and despite my enormous size I am completely harmless to humans. What am I?", a: "whale shark" },
+      ],
+      deep: [
+        { q: "I live where sunlight never reaches and I carry my own lantern on my head to lure prey in the darkness. What am I?", a: "anglerfish" },
+        { q: "I am the deepest point in all of Earth's oceans. Mount Everest could be placed inside me and still be submerged. What am I?", a: "mariana trench" },
+        { q: "I look like a swimming cucumber, I breathe through my rear end, and I clean the ocean floor by eating sediment. What am I?", a: "sea cucumber" },
+        { q: "I have no eyes, no mouth, and no stomach — yet I thrive near scalding hydrothermal vents on the ocean floor. What am I?", a: "tube worm" },
+        { q: "I am a giant squid's most famous enemy. I am the largest animal on Earth and navigate by clicking sounds. What am I?", a: "sperm whale" },
+      ],
+      general: [
+        { q: "I cover more than 70% of Earth's surface, yet more of my floor remains unexplored than the surface of the Moon. What am I?", a: "ocean" },
+        { q: "I produce over half of the world's oxygen, yet I am not a forest or a plant — I am microscopic and I drift in the sea. What am I?", a: "phytoplankton" },
+        { q: "I am made by a tiny animal, I shelter 25% of all marine life, and I am slowly bleaching white due to warming waters. What am I?", a: "coral reef" },
+        { q: "I rise and fall twice a day, pulled by the gravity of the Moon. Sailors have depended on me for thousands of years. What am I?", a: "tides" },
+        { q: "I am the longest mountain range on Earth — but you have never seen me because I lie entirely beneath the sea. What am I?", a: "mid-ocean ridge" },
+      ],
+    };
+
+    let currentCategory = 'all';
+    let currentAnswer = '';
+    let lastIndex = -1;
+    let answered = false;
+    let scoreCorrect = 0;
+    let scoreWrong = 0;
+    let scoreTotal = 0;
+
+    function setCategory(cat, btn) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function getPool() {
+      if (currentCategory === 'all') return Object.values(riddles).flat();
+      return riddles[currentCategory] || [];
+    }
+
+    function generateRiddle() {
+      const pool = getPool();
+      let idx;
+      do { idx = Math.floor(Math.random() * pool.length); } while (idx === lastIndex && pool.length > 1);
+      lastIndex = idx;
+      const item = pool[idx];
+      currentAnswer = item.a;
+      answered = false;
+
+      document.getElementById('riddleBox').innerHTML = `<p class="riddle-text animate-in">${item.q}</p>`;
+      document.getElementById('answerInput').value = '';
+      document.getElementById('answerInputSection').style.display = 'block';
+      document.getElementById('feedback').style.display = 'none';
+      document.getElementById('feedback').className = 'feedback';
+      document.getElementById('answerBox').style.display = 'none';
+      document.getElementById('answerText').textContent = '';
+      document.getElementById('revealBtn').style.display = 'inline-block';
+
+      scoreTotal++;
+      document.getElementById('scoreTotal').textContent = scoreTotal;
+    }
+
+    function checkAnswer() {
+      if (answered) return;
+      const userAnswer = document.getElementById('answerInput').value.trim().toLowerCase();
+      if (!userAnswer) return;
+
+      answered = true;
+      const fb = document.getElementById('feedback');
+      fb.style.display = 'block';
+
+      const isCorrect = currentAnswer.includes(userAnswer) && userAnswer.length > 2;
+
+      if (isCorrect) {
+        fb.className = 'feedback correct-fb animate-in';
+        fb.textContent = '🎉 Correct! Great job, ocean explorer!';
+        scoreCorrect++;
+        document.getElementById('scoreCorrect').textContent = scoreCorrect;
+        document.getElementById('revealBtn').style.display = 'none';
+        revealAnswer();
+      } else {
+        fb.className = 'feedback wrong-fb animate-in';
+        fb.textContent = '❌ Not quite! Check the answer below.';
+        scoreWrong++;
+        document.getElementById('scoreWrong').textContent = scoreWrong;
+      }
+
+      document.getElementById('answerInputSection').style.display = 'none';
+    }
+
+    function revealAnswer() {
+      document.getElementById('answerText').textContent = currentAnswer.charAt(0).toUpperCase() + currentAnswer.slice(1);
+      document.getElementById('answerBox').style.display = 'block';
+      document.getElementById('revealBtn').style.display = 'none';
+      document.getElementById('answerInputSection').style.display = 'none';
+    }
+
+    function resetScore() {
+      scoreCorrect = 0;
+      scoreWrong = 0;
+      scoreTotal = 0;
+      document.getElementById('scoreCorrect').textContent = 0;
+      document.getElementById('scoreWrong').textContent = 0;
+      document.getElementById('scoreTotal').textContent = 0;
+    }
+  </script>
+
+</body>
+</html>
