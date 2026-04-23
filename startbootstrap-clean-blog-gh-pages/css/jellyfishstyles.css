@@ -1,0 +1,43 @@
+body {
+  background-color: rgb(190, 215, 246);
+  font-family:Georgia, 'Times New Roman', Times, serif;
+}
+
+.header{
+  background-color: aliceblue;
+  height: 100px;
+  line-height: 100px;
+}
+
+.mainbody {
+  background-color: aliceblue;
+}
+
+img{
+  width: 300px;
+}
+
+h1{
+  color:midnightblue;
+  font-family:fantasy;
+  font-style: italic;
+  font-size: 50px ;
+}
+
+p {
+  font-size: 25px;
+  color: rgb(43, 66, 66);
+}
+
+#wrap {
+  width: 80%;
+  margin: 0 auto;
+  text-align: center;
+}
+
+ol, ul {
+  width: fit-content;
+  margin: 0 auto;
+  text-align: left;
+}
+
